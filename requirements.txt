@@ -1,5 +1,4 @@
 fastapi
 uvicorn
 requests
-pycryptodome
 discord.py
