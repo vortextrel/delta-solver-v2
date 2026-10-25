@@ -1,6 +1,7 @@
 import time
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 import requests
 import urllib.parse
 import json
@@ -8,6 +9,13 @@ import base64
 from Crypto.Cipher import AES
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 AUTH_API = "https://auth.platorelay.com/api"
 MIN_TICKET_LEN = 33
@@ -142,7 +150,7 @@ def get_delta_key(url: str):
 
     return {"error": "Max rounds reached without key"}
 
-# Serve the website
-import os
-os.makedirs("static", exist_ok=True)
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+# --- SERVE THE WEBSITE ---
+@app.get("/")
+def serve_index():
+    return FileResponse("index.html")
