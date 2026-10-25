@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delta Auto Solver</title>
+  <style>
+    :root { --primary: #4f46e5; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: var(--card); padding: 2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    h1 { margin-top: 0; font-size: 1.8rem; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; color: transparent; }
+    input { width: 100%; padding: 1rem; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; font-family: monospace; margin-bottom: 1rem; box-sizing: border-box; }
+    input:focus { outline: 2px solid var(--primary); border-color: transparent; }
+    button { width: 100%; padding: 1rem; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+    button:hover { background: #4338ca; }
+    button:disabled { background: #475569; cursor: not-allowed; }
+    #status { margin-top: 1.5rem; font-family: monospace; padding: 1rem; border-radius: 8px; background: #0f172a; border: 1px solid #334155; display: none; }
+    .loader { display: inline-block; width: 1rem; height: 1rem; border: 2px solid #fff; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite; margin-right: 8px; vertical-align: text-bottom; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .success { color: #4ade80; border-color: #166534 !important; background: #052e16 !important; }
+    .error { color: #f87171; border-color: #991b1b !important; background: #450a0a !important; }
+    .key-display { display: flex; flex-direction: column; gap: 10px; margin-top: 1rem; padding: 1rem; background: #1e293b; border-radius: 8px; }
+    .key-display code { font-size: 1.3rem; font-weight: bold; word-break: break-all; color: #4ade80; line-height: 1.4; }
+    .copy-btn { width: 100%; padding: 0.8rem; background: #334155; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Delta Auto Solver</h1>
+    <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem;">All-in-One Cloud Edition</p>
+    
+    <input id="urlInput" type="url" placeholder="https://auth.platorelay.com/a?d=..." />
+    <button id="solveBtn">Generate Key</button>
+    
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('solveBtn');
+    const input = document.getElementById('urlInput');
+    const status = document.getElementById('status');
+
+    function showStatus(msg, className = '') {
+      status.style.display = 'block';
+      status.className = className;
+      status.innerHTML = msg;
+    }
+
+    btn.addEventListener('click', async () => {
+      const url = input.value.trim();
+      if (!url) return showStatus('Please paste a link first.', 'error');
+      
+      btn.disabled = true;
+      showStatus('<span class="loader"></span> Bypassing security checkpoints... (Wait up to 30s if server was asleep)');
+      
+      try {
+        const res = await fetch(`/delta?url=${encodeURIComponent(url)}`);
+        if (!res.ok) throw new Error("Server returned an error");
+        
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        showStatus(`
+          <div class="success">
+            ✔ Key Successfully Generated!
+            <div class="key-display">
+              <code>${data.key}</code>
+              <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.key}'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Key', 2000)">Copy Key</button>
+            </div>
+          </div>
+        `);
+      } catch (err) {
+        showStatus(`❌ Error: ${err.message}. <br><br>If this says 'Failed to fetch', the cloud server is still booting. Wait 10 seconds and try again.`, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
